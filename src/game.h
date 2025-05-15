@@ -1,7 +1,9 @@
 ﻿#pragma once
 
-typedef struct game {
+#include "cglm/struct.h"
 
+typedef struct game {
+    
 } game;
 
 

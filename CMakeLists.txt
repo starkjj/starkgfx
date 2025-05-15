@@ -45,6 +45,9 @@ endif()
 target_link_libraries(sokol PUBLIC cimgui)
 target_include_directories(sokol INTERFACE sokol)
 
+#=== LIBRARY: add other libs
+include_directories(libs)
+
 #=== EXECUTABLE: starkgfx
 if(CMAKE_SYSTEM_NAME STREQUAL Windows)
     add_executable(starkgfx WIN32 src/demo.c)
