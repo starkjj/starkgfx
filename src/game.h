@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "cglm/struct.h"
+#include "struct.h"
 
 typedef struct game {
 
@@ -28,4 +28,4 @@ typedef struct game {
 
 
 // global name
-extern game *g;
+extern game g;
