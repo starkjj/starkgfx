@@ -13,6 +13,7 @@ set( GLFW_INSTALL OFF CACHE BOOL  "GLFW lib only" )
 set( GLAD_GL "" )
 
 add_subdirectory( libs/glfw )
+add_subdirectory( libs/cglm )
 
 option( USE-GLFW-GLAD "Use GLAD from GLFW" ON )
 
@@ -32,6 +33,7 @@ set (STARKGFX-SRC
 #=== EXECUTABLE: starkgfx
 add_executable(starkgfx WIN32 ${STARKGFX-SRC} ${GLAD_GL})
 target_link_libraries( starkgfx ${OPENGL_LIBRARIES} glfw )
+target_include_directories(starkgfx PUBLIC libs/cglm/include)
 if( MSVC )
     if(${CMAKE_VERSION} VERSION_LESS "3.6.0")
         message( "\n\t[ WARNING ]\n\n\tCMake version lower than 3.6.\n\n\t - Please update CMake and rerun; OR\n\t - Manually set 'GLFW-CMake-starter' as StartUp Project in Visual Studio.\n" )
