@@ -28,12 +28,15 @@ endif()
 
 set (STARKGFX-SRC
     src/game.c
+    src/util/load_shader.h
 )
+
+include_directories(src/util)
 
 #=== EXECUTABLE: starkgfx
 add_executable(starkgfx WIN32 ${STARKGFX-SRC} ${GLAD_GL})
 target_link_libraries( starkgfx ${OPENGL_LIBRARIES} glfw )
-target_include_directories(starkgfx PUBLIC libs/cglm/include)
+target_include_directories(starkgfx PUBLIC libs/cglm/include src/util)
 if( MSVC )
     if(${CMAKE_VERSION} VERSION_LESS "3.6.0")
         message( "\n\t[ WARNING ]\n\n\tCMake version lower than 3.6.\n\n\t - Please update CMake and rerun; OR\n\t - Manually set 'GLFW-CMake-starter' as StartUp Project in Visual Studio.\n" )
