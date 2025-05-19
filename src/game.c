@@ -65,7 +65,7 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(640, 480, "OpenGL Triangle", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(640, 480, "starkgfx", NULL, NULL);
     if (!window)
     {
         glfwTerminate();
@@ -125,7 +125,7 @@ int main(void)
         mat4s p = glms_mat4_identity();
         mat4s mvp = glms_mat4_identity();
 
-        m = glms_rotate_z(m, (float) glfwGetTime());
+        m = glms_rotate_y(m, (float) glfwGetTime() * 1.f);
         p = glms_ortho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
         mvp = glms_mat4_mul(p, m);
 
