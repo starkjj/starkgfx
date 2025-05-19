@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 
 #include <cglm/struct.h>
+#include "game.h"
 
 #include <stdlib.h>
 #include <stddef.h>
@@ -119,6 +120,7 @@ int main(void)
         const float ratio = width / (float) height;
 
         glViewport(0, 0, width, height);
+        glClearColor(0.4f, 0.6f, 0.9f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
         mat4s m = glms_mat4_identity();

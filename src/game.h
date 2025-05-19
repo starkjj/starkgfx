@@ -1,11 +1,10 @@
 ﻿#pragma once
-
-#include "struct.h"
+#include <cglm/struct.h>
 
 typedef struct game {
 
     struct {
-        vec3s pos, dir, dir_xy, right, up;
+        vec3s target, pos, dir, camUp, right, up;
         float pitch, yaw;
         float slide;
         float fov;
