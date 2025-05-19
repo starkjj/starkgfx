@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "load_shader.h"
+#include "shader.h"
 
 typedef struct Vertex
 {
@@ -51,6 +51,7 @@ int main(void)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    glfwWindowHint( GLFW_SAMPLES, 8 );
 
     GLFWwindow* window = glfwCreateWindow(640, 480, "starkgfx", NULL, NULL);
     if (!window)
@@ -67,28 +68,13 @@ int main(void)
 
     // NOTE: OpenGL error checks have been omitted for brevity
 
-    shader_data source = parse_shader("../src/shaders/triangle.shader");
+    GLuint program = create_shader("../src/shaders/triangle.shader");
 
     GLuint vertex_buffer;
     glGenBuffers(1, &vertex_buffer);
     glBindBuffer(GL_ARRAY_BUFFER, vertex_buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    const GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &source.vertex, NULL);
-    glCompileShader(vertex_shader);
-
-    const GLuint fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &source.fragment, NULL);
-    glCompileShader(fragment_shader);
-
-    const GLuint program = glCreateProgram();
-    glAttachShader(program, vertex_shader);
-    glAttachShader(program, fragment_shader);
-    glLinkProgram(program);
-
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
 
     const GLint mvp_location = glGetUniformLocation(program, "MVP");
     const GLint vpos_location = glGetAttribLocation(program, "vPos");
@@ -109,8 +95,25 @@ int main(void)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, element_object);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
+    double prev_time = glfwGetTime();
+    double title_countdown_s = 0.1;
     while (!glfwWindowShouldClose(window))
     {
+        double current_time = glfwGetTime();
+        double delta_time = current_time - prev_time;
+        prev_time = current_time;
+        // print FPS
+        title_countdown_s -= delta_time;
+        if (title_countdown_s <= 0.0 && delta_time > 0.0) {
+            double fps = 1.0 / delta_time;
+
+            // Create string and put FPS in window title;
+            char tmp[256];
+            sprintf(tmp, "FPS: %.2lf", fps);
+            glfwSetWindowTitle(window, tmp);
+            title_countdown_s = 0.1;
+        }
+
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         const float ratio = width / (float) height;

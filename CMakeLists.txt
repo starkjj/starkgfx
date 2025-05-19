@@ -27,8 +27,8 @@ if( MSVC )
 endif()
 
 set (STARKGFX-SRC
-    src/game.c
-    src/util/load_shader.h
+        src/game.c
+        src/util/shader.h
 )
 
 include_directories(src/util)
