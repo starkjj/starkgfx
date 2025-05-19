@@ -10,6 +10,7 @@
 typedef enum { NONE = -1, VERTEX = 0, FRAGMENT = 1 } shader_type;
 
 typedef struct {
+    GLuint id;
     char *vertex;
     char *fragment;
 } shader_data;
@@ -44,12 +45,12 @@ static GLuint create_shader(const char *filepath) {
     }
     fclose(file);
 
-    // Store our shader data
-    shader_data data = (shader_data) {vertex, fragment};
-
     GLuint shader_program = glCreateProgram();
     GLuint vertex_shader_handle = glCreateShader(GL_VERTEX_SHADER);
     GLuint fragment_shader_handle = glCreateShader(GL_FRAGMENT_SHADER);
+
+    // Store our shader data
+    shader_data data = (shader_data) {shader_program, vertex, fragment};
 
     // Compile vertex shader
     glShaderSource(vertex_shader_handle, 1, &data.vertex, NULL);
@@ -94,4 +95,20 @@ static GLuint create_shader(const char *filepath) {
     }
 
     return shader_program;
+}
+
+static void use_shader(const GLuint id) {
+    glUseProgram(id);
+}
+
+static void set_bool(const GLuint id, const char* name, bool value) {
+    glUniform1i(glGetUniformLocation(id, name), (int)value);
+}
+
+static void set_int(const GLuint id, const char* name, int value) {
+    glUniform1i(glGetUniformLocation(id, name), value);
+}
+
+static void set_float(const GLuint id, const char* name, float value) {
+    glUniform1f(glGetUniformLocation(id, name), value);
 }
