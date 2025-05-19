@@ -1,107 +1,38 @@
-﻿#include "cimgui.h"
-#include "sokol_app.h"
-#include "sokol_gfx.h"
-#include "sokol_glue.h"
-#include "sokol_imgui.h"
-#include "sokol_log.h"
-#include "game.h"
-#include "shader/triangle.h"
+﻿#include <GLFW/glfw3.h>
 
-game g;
+int main(void)
+{
+    GLFWwindow* window;
 
-static struct {
-    sg_pipeline pipline;
-    sg_bindings bind;
-    sg_pass_action pass_action;
-} state;
+    /* Initialize the library */
+    if (!glfwInit())
+        return -1;
 
-static void init(void) {
-    sg_setup(&(sg_desc){
-        .environment = sglue_environment(),
-        .logger.func = slog_func,
-    });
-    simgui_setup(&(simgui_desc_t){ 0 });
+    /* Create a windowed mode window and its OpenGL context */
+    window = glfwCreateWindow(640, 480, "GLFW CMake starter", NULL, NULL);
+    if (!window)
+    {
+        glfwTerminate();
+        return -1;
+    }
 
-    // a vertex buffer with 3 vertices
-    float vertices[] = {
-        // positions            // colors
-        0.0f,  0.5f, 0.5f,     1.0f, 0.0f, 0.0f, 1.0f,
-        0.5f, -0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,
-       -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f, 1.0f
-    };
+    /* Make the window's context current */
+    glfwMakeContextCurrent(window);
+    glClearColor( 0.4f, 0.3f, 0.4f, 0.0f );
 
-    state.bind.vertex_buffers[0] = sg_make_buffer(&(sg_buffer_desc){
-        .data = SG_RANGE(vertices),
-        .label = "vertices"
-    });
+    /* Loop until the user closes the window */
+    while (!glfwWindowShouldClose(window))
+    {
+        /* Render here */
+        glClear(GL_COLOR_BUFFER_BIT);
 
-    sg_shader shd = sg_make_shader(triangle_shader_desc(sg_query_backend()));
+        /* Swap front and back buffers */
+        glfwSwapBuffers(window);
 
-    state.pipline = sg_make_pipeline(&(sg_pipeline_desc){
-        .shader = shd,
-        .layout = {
-            .attrs = {
-                [ATTR_triangle_position].format = SG_VERTEXFORMAT_FLOAT3,
-                [ATTR_triangle_color0].format = SG_VERTEXFORMAT_FLOAT4,
-            }
-        },
-        .label = "triangle-pipeline"
-    });
+        /* Poll for and process events */
+        glfwPollEvents();
+    }
 
-    // initial clear color
-    state.pass_action = (sg_pass_action) {
-        .colors[0] = { .load_action = SG_LOADACTION_CLEAR, .clear_value = { 0.0f, 0.5f, 1.0f, 1.0 } }
-    };
-}
-
-static void frame(void) {
-    simgui_new_frame(&(simgui_frame_desc_t){
-        .width = sapp_width(),
-        .height = sapp_height(),
-        .delta_time = sapp_frame_duration(),
-        .dpi_scale = sapp_dpi_scale(),
-    });
-
-    /*=== UI CODE STARTS HERE ===*/
-    igSetNextWindowPos((ImVec2){10,10}, ImGuiCond_Once);
-    igSetNextWindowSize((ImVec2){400, 100}, ImGuiCond_Once);
-    igBegin("Hello Dear ImGui!", 0, ImGuiWindowFlags_None);
-    igColorEdit3("Background", &state.pass_action.colors[0].clear_value.r, ImGuiColorEditFlags_None);
-    igEnd();
-    /*=== UI CODE ENDS HERE ===*/
-
-    sg_begin_pass(&(sg_pass){ .action = state.pass_action, .swapchain = sglue_swapchain() });
-    simgui_render();
-
-    sg_apply_pipeline(state.pipline);
-    sg_apply_bindings(&state.bind);
-    sg_draw(0, 3, 1);
-
-    sg_end_pass();
-    sg_commit();
-}
-
-static void cleanup(void) {
-    simgui_shutdown();
-    sg_shutdown();
-}
-
-static void event(const sapp_event* ev) {
-    simgui_handle_event(ev);
-}
-
-sapp_desc sokol_main(int argc, char* argv[]) {
-    (void)argc;
-    (void)argv;
-    return (sapp_desc){
-        .init_cb = init,
-        .frame_cb = frame,
-        .cleanup_cb = cleanup,
-        .event_cb = event,
-        .window_title = "StarkGFX",
-        .width = 800,
-        .height = 600,
-        .icon.sokol_default = true,
-        .logger.func = slog_func,
-    };
+    glfwTerminate();
+    return 0;
 }

@@ -1,44 +1,41 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.5)
 project(starkgfx)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 11)
 
-# Linux -pthread shenanigans
-if (CMAKE_SYSTEM_NAME STREQUAL Linux)
-    set(THREADS_PREFER_PTHREAD_FLAG ON)
-    find_package(Threads REQUIRED)
+find_package( OpenGL REQUIRED )
+
+include_directories( ${OPENGL_INCLUDE_DIRS} )
+
+set( GLFW_BUILD_DOCS OFF CACHE BOOL  "GLFW lib only" )
+set( GLFW_INSTALL OFF CACHE BOOL  "GLFW lib only" )
+set( GLAD_GL "" )
+
+add_subdirectory( libs/glfw )
+
+option( USE-GLFW-GLAD "Use GLAD from GLFW" ON )
+
+if( USE-GLFW-GLAD )
+    include_directories("${GLFW_SOURCE_DIR}/deps")
+    set( GLAD_GL "${GLFW_SOURCE_DIR}/deps/glad/gl.h" )
 endif()
 
-#=== LIBRARIES
-add_subdirectory(libs)
+if( MSVC )
+    SET( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /ENTRY:mainCRTStartup" )
+endif()
+
+set (STARKGFX-SRC
+    src/game.c
+)
 
 #=== EXECUTABLE: starkgfx
-if(CMAKE_SYSTEM_NAME STREQUAL Windows)
-    add_executable(starkgfx WIN32 src/game.c)
-    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT starkgfx)
-else()
-    add_executable(starkgfx src/game.c)
+add_executable(starkgfx WIN32 ${STARKGFX-SRC} ${GLAD_GL})
+target_link_libraries( starkgfx ${OPENGL_LIBRARIES} glfw )
+if( MSVC )
+    if(${CMAKE_VERSION} VERSION_LESS "3.6.0")
+        message( "\n\t[ WARNING ]\n\n\tCMake version lower than 3.6.\n\n\t - Please update CMake and rerun; OR\n\t - Manually set 'GLFW-CMake-starter' as StartUp Project in Visual Studio.\n" )
+    else()
+        set_property( DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT starkgfx )
+    endif()
 endif()
-
-#=== LINKING
-target_link_libraries(starkgfx mingw32 extern)
-
-# Emscripten-specific linker options
-if (CMAKE_SYSTEM_NAME STREQUAL Emscripten)
-    set(CMAKE_EXECUTABLE_SUFFIX ".html")
-    # use our own minimal shell.html
-    target_link_options(starkgfx PRIVATE --shell-file ../sokol/shell.html)
-    # link with WebGL2
-    target_link_options(starkgfx PRIVATE -sUSE_WEBGL2=1)
-    # WASM+JS size optimizations
-    target_link_options(starkgfx PRIVATE -sNO_FILESYSTEM=1 -sASSERTIONS=0 -sMALLOC=emmalloc --closure=1)
-endif()
-
-# explicitly strip dead code
-if (CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT CMAKE_SYSTEM_NAME STREQUAL Emscripten)
-    target_link_options(starkgfx PRIVATE LINKER:-dead_strip)
-endif()
-
-# this hack removes the xxx-CMakeForceLinker.cxx dummy file
-#set_target_properties(starkgfx PROPERTIES LINKER_LANGUAGE C)
