@@ -14,15 +14,15 @@
 #include "stb_image.h"
 
 typedef struct Vertex {
-    vec2s pos;
+    vec3s pos;
     vec3s col;
     vec3s uv;
 } Vertex;
 
-static const Vertex vertices[] = {{{0.5f, 0.5f}, {1.f, 0.f, 0.f}, {1.f, 1.f}},
-                                  {{0.5f, -0.5f}, {0.f, 1.f, 0.f}, {1.f, 0.f}},
-                                  {{-0.f, -0.5f}, {0.f, 0.f, 1.f}, {0.f, 0.f}},
-                                  {{-0.f, 0.5f}, {0.f, 0.f, 1.f}, {0.f, 1.f}}};
+static const Vertex vertices[] = {{{0.5f, 0.5f, 0.f }, {1.f, 0.f, 0.f}, {1.f, 1.f}},
+                                  {{0.5f, -0.5f, 0.f }, {0.f, 1.f, 0.f}, {1.f, 0.f}},
+                                  {{-0.5f, -0.5f, 0.f }, {0.f, 0.f, 1.f}, {0.f, 0.f}},
+                                  {{-0.5f, 0.5f, 0.f }, {0.f, 0.f, 1.f}, {0.f, 1.f}}};
 
 static int indices[] = {0, 1, 3, 1, 2, 3};
 
@@ -60,9 +60,9 @@ int main(void) {
     use_shader(program);
 
     const GLint mvp_location = glGetUniformLocation(program, "MVP");
-    const GLint vpos_location = glGetAttribLocation(program, "vPos");
-    const GLint vcol_location = glGetAttribLocation(program, "vCol");
-    const GLint vuv_location = glGetAttribLocation(program, "vUv");
+    const GLint vpos_location = glGetAttribLocation(program, "aPos");
+    const GLint vcol_location = glGetAttribLocation(program, "aColor");
+    const GLint vuv_location = glGetAttribLocation(program, "aTexCoord");
 
     GLuint vertex_buffer, vertex_array, element_object;
     glGenVertexArrays(1, &vertex_array);
@@ -85,6 +85,7 @@ int main(void) {
     glVertexAttribPointer(vcol_location, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, col));
     glEnableVertexAttribArray(vcol_location);
 
+    // uv attribute
     glVertexAttribPointer(vuv_location, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void *) offsetof(Vertex, uv));
     glEnableVertexAttribArray(vuv_location);
 
@@ -104,25 +105,10 @@ int main(void) {
     glGenerateMipmap(GL_TEXTURE_2D);
     stbi_image_free(data);
 
-    set_int(program, "texture1", 0);
+    use_shader(program);
+    set_int(program, "ourTexture", 0);
 
-    double prev_time = glfwGetTime();
-    double title_countdown_s = 0.1;
     while (!glfwWindowShouldClose(window)) {
-        double current_time = glfwGetTime();
-        double delta_time = current_time - prev_time;
-        prev_time = current_time;
-        // print FPS
-        title_countdown_s -= delta_time;
-        if (title_countdown_s <= 0.0 && delta_time > 0.0) {
-            double fps = 1.0 / delta_time;
-
-            // Create string and put FPS in window title;
-            char tmp[256];
-            sprintf(tmp, "FPS: %.2lf", fps);
-            glfwSetWindowTitle(window, tmp);
-            title_countdown_s = 0.1;
-        }
 
         int width, height;
         glfwGetFramebufferSize(window, &width, &height);
@@ -131,6 +117,9 @@ int main(void) {
         glViewport(0, 0, width, height);
         glClearColor(0.4f, 0.6f, 0.9f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, texture);
 
         mat4s m = glms_mat4_identity();
         mat4s p = glms_mat4_identity();
@@ -141,9 +130,6 @@ int main(void) {
         mvp = glms_mat4_mul(p, m);
 
         glUniformMatrix4fv(mvp_location, 1, GL_FALSE, (const GLfloat *) &mvp);
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
 
         use_shader(program);
         glBindVertexArray(vertex_array);
