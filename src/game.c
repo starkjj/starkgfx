@@ -112,24 +112,19 @@ int main(void) {
         GLint view_loc = glGetUniformLocation(program, "view");
         GLint proj_loc = glGetUniformLocation(program, "projection");
 
-        mat4s m = glms_mat4_identity();
-        mat4s v = glms_mat4_identity();
-        mat4s p;
+        mat4s model  = glms_mat4_identity();
+        mat4s project;
 
-        p = glms_perspective(glm_rad(45.0f), ratio, 0.1f, 100.0f);
-        m = glms_rotate(m, glfwGetTime(), (vec3s){0.5f, 1.0f, 0.0f});
+        project = glms_perspective(glm_rad(45.0f), ratio, 0.1f, 100.0f);
+        model = glms_rotate(model, 1.0f, (vec3s){0.5f, 1.0f, 0.0f});
 
         vec3s center = glms_vec3_add(camPos, camFront);
         mat4s view = glms_lookat(camPos, center, camUp);
-        glUniformMatrix4fv(view_loc, 1, GL_FALSE, (GLfloat *)view.raw);
 
         // pass them back to the shader
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, (GLfloat *)m.raw);
-        glUniformMatrix4fv(view_loc, 1, GL_FALSE, (GLfloat *)v.raw);
-        glUniformMatrix4fv(proj_loc, 1, GL_FALSE, (GLfloat *)p.raw);
-
-        v = glms_lookat(camPos, camFront, camUp);
-        glUniformMatrix4fv(view_loc, 1, GL_FALSE, (GLfloat *)v.raw);
+        glUniformMatrix4fv(model_loc, 1, GL_FALSE, (GLfloat *)model.raw);
+        glUniformMatrix4fv(view_loc, 1, GL_FALSE, (GLfloat *)view.raw);
+        glUniformMatrix4fv(proj_loc, 1, GL_FALSE, (GLfloat *)project.raw);
 
         // render box
         glBindVertexArray(vertex_array);
@@ -152,14 +147,16 @@ void process_input(GLFWwindow *window)
 
     float cam_speed = (float)(2.5f * dt);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camPos.z -= cam_speed;
+        camPos = glms_vec3_muladds(camFront, cam_speed, camPos);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camPos.z += cam_speed;
+        camPos = glms_vec3_mulsubs(camFront, cam_speed, camPos);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camPos.x -= cam_speed;
+        camPos = glms_vec3_mulsubs(glms_normalize(glms_cross(camFront, camUp)), cam_speed, camPos);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camPos.x += cam_speed;
+        camPos = glms_vec3_muladds(glms_normalize(glms_cross(camFront, camUp)), cam_speed, camPos);
 }
+
+// glm::normalize( glm::cross(cameraFront, cameraUp) ) * cameraSpeed;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
