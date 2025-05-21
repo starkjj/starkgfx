@@ -10,9 +10,20 @@
 #include "game.h"
 #include "shader.h"
 
+// settings
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
+
 vec3s camPos = {0.0f, 0.0f, 3.0f};
 vec3s camFront = {0.0f, 0.0f, -1.0f};
 vec3s camUp = {0.0f, 1.0f, 0.0f};
+
+bool first_mouse = true;
+float yaw   = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+float pitch =  0.0f;
+float lastx =  640.0f / 2.0;
+float lasty =  480.0 / 2.0;
+float fov   =  45.0f;
 
 float dt = 0.0f;
 float lastframe = 0.0f;
@@ -38,7 +49,11 @@ int main(void) {
         exit(EXIT_FAILURE);
     }
 
+    // Setup callbacks
+    glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetKeyCallback(window, key_callback);
+
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED); //Disables mouse
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     gladLoadGL(glfwGetProcAddress);
@@ -85,16 +100,16 @@ int main(void) {
     use_shader(program);
     set_int(program, "ourTexture", 0);
 
+    // MAIN LOOP
     while (!glfwWindowShouldClose(window)) {
         // per-frame time logic
-        float current_frame = (float)glfwGetTime();
+        float current_frame = (float) glfwGetTime();
         dt = current_frame - lastframe;
         lastframe = current_frame;
 
         // input
         process_input(window);
 
-        int width, height;
         glfwGetFramebufferSize(window, &width, &height);
         const float ratio = (float) width / (float) height;
 
@@ -112,27 +127,38 @@ int main(void) {
         GLint view_loc = glGetUniformLocation(program, "view");
         GLint proj_loc = glGetUniformLocation(program, "projection");
 
-        mat4s model  = glms_mat4_identity();
-        mat4s project;
-
-        project = glms_perspective(glm_rad(45.0f), ratio, 0.1f, 100.0f);
-        model = glms_rotate(model, 1.0f, (vec3s){0.5f, 1.0f, 0.0f});
+        mat4s model = glms_mat4_identity();
+        mat4s project = glms_perspective(glm_rad(45.0f), ratio, 0.1f, 100.0f);
+        model = glms_rotate(model, glfwGetTime(), (vec3s) {0.5f, 1.0f, 0.0f});
 
         vec3s center = glms_vec3_add(camPos, camFront);
         mat4s view = glms_lookat(camPos, center, camUp);
 
         // pass them back to the shader
-        glUniformMatrix4fv(model_loc, 1, GL_FALSE, (GLfloat *)model.raw);
-        glUniformMatrix4fv(view_loc, 1, GL_FALSE, (GLfloat *)view.raw);
-        glUniformMatrix4fv(proj_loc, 1, GL_FALSE, (GLfloat *)project.raw);
+        glUniformMatrix4fv(view_loc, 1, GL_FALSE, (GLfloat *) view.raw);
+        glUniformMatrix4fv(proj_loc, 1, GL_FALSE, (GLfloat *) project.raw);
 
-        // render box
+        // render boxes
+        // glBindVertexArray(vertex_array);
+        // glDrawArrays(GL_TRIANGLES, 0, 36);
+
         glBindVertexArray(vertex_array);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (GLuint i = 0; i < 10; i++)
+        {
+            // calculate the model matrix for each object and pass it to shader before drawing
+            mat4s model = glms_mat4_identity(); // make sure to initialize matrix to identity matrix first
+            model = glms_translate(model, cubePositions[i]);
+            float angle = 20.0f * i;
+            model = glms_rotate(model, glm_rad(angle) * glfwGetTime(), (vec3s){1.0f, 0.3f, 0.5f} );
+            set_mat4s(program, "model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
+
 
     glfwDestroyWindow(window);
 
@@ -154,9 +180,46 @@ void process_input(GLFWwindow *window)
         camPos = glms_vec3_mulsubs(glms_normalize(glms_cross(camFront, camUp)), cam_speed, camPos);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camPos = glms_vec3_muladds(glms_normalize(glms_cross(camFront, camUp)), cam_speed, camPos);
+
+    // locks player to xy plane
+    // camPos.y = 0.0f;
 }
 
-// glm::normalize( glm::cross(cameraFront, cameraUp) ) * cameraSpeed;
+void mouse_callback(GLFWwindow *window, double xposin, double yposin) {
+    float xpos = (float)(xposin);
+    float ypos = (float)(yposin);
+
+    if (first_mouse)
+    {
+        lastx = xpos;
+        lasty = ypos;
+        first_mouse = false;
+    }
+
+    float xoffset = xpos - lastx;
+    float yoffset = lasty - ypos; // reversed since y-coordinates go from bottom to top
+    lastx = xpos;
+    lasty = ypos;
+
+    float sensitivity = 0.1f; // change this value to your liking
+    xoffset *= sensitivity;
+    yoffset *= sensitivity;
+
+    yaw += xoffset;
+    pitch += yoffset;
+
+    // make sure that when pitch is out of bounds, screen doesn't get flipped
+    if (pitch > 89.0f)
+        pitch = 89.0f;
+    if (pitch < -89.0f)
+        pitch = -89.0f;
+
+    vec3s front;
+    front.x = cos(glm_rad(yaw)) * cos(glm_rad(pitch));
+    front.y = sin(glm_rad(pitch));
+    front.z = sin(glm_rad(yaw)) * cos(glm_rad(pitch));
+    camFront = glms_normalize(front);
+}
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {

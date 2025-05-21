@@ -116,3 +116,7 @@ static void set_int(const GLuint id, const char* name, int value) {
 static void set_float(const GLuint id, const char* name, float value) {
     glUniform1f(glGetUniformLocation(id, name), value);
 }
+
+static void set_mat4s(const GLuint id, const char* name, const mat4s value) {
+    glUniformMatrix4fv(glGetUniformLocation(id, name), 1, GL_FALSE, (GLfloat *) value.raw);
+}
