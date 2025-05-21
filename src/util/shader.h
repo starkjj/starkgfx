@@ -53,12 +53,14 @@ static GLuint create_shader(const char *filepath) {
     shader_data data = (shader_data) {shader_program, vertex, fragment};
 
     // Compile vertex shader
+    char vertlog[512];
     glShaderSource(vertex_shader_handle, 1, &data.vertex, NULL);
     glCompileShader(vertex_shader_handle);
     int vparams = -1;
     glGetShaderiv(vertex_shader_handle, GL_COMPILE_STATUS, &vparams);
     if (GL_TRUE != vparams) {
-        fprintf(stderr, "Error compiling vertex shader at index %u \n", vertex_shader_handle);
+        glGetShaderInfoLog(vertex_shader_handle, 512, NULL, vertlog);
+        fprintf(stderr, "Error compiling vertex shader: %s \n", vertlog);
         glDeleteShader(vertex_shader_handle);
         glDeleteShader(fragment_shader_handle);
         glDeleteProgram(shader_program);
@@ -66,12 +68,14 @@ static GLuint create_shader(const char *filepath) {
     }
 
     // Compile fragment shader
+    char fraglog[512];
     glShaderSource(fragment_shader_handle, 1, &data.fragment, NULL);
     glCompileShader(fragment_shader_handle);
     int fparams = -1;
     glGetShaderiv(fragment_shader_handle, GL_COMPILE_STATUS, &fparams);
     if (GL_TRUE != fparams) {
-        fprintf(stderr, "Error compiling fragment shader at index %u \n", fragment_shader_handle);
+        glGetShaderInfoLog(fragment_shader_handle, 512, NULL, fraglog);
+        fprintf(stderr, "Error compiling fragment shader: %s \n", fraglog);
         glDeleteShader(fragment_shader_handle);
         glDeleteShader(vertex_shader_handle);
         glDeleteProgram(shader_program);
