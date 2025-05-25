@@ -34,6 +34,11 @@ set (STARKGFX-SRC
         src/entities/camera.h
         src/entities/camera.c
         src/util/input.h
+        src/graphics.h
+        src/graphics.c
+        src/entities/primitive.h
+        src/entities/primitive.c
+        src/starkgfx.h
 )
 
 include_directories(src/util, src/entities)

@@ -1,5 +1,5 @@
 #pragma once
-#include "cglm/struct.h"
+#include "../starkgfx.h"
 
 typedef struct {
     vec3s pos, dir, up;
