@@ -2,33 +2,31 @@
 #include <glad/gl.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
-
+#include <cglm/struct.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <cglm/struct.h>
-#include "stb_image.h"
 #include "game.h"
+#include "stb_image.h"
 #include "shader.h"
 
-// settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+game g;
+// camera* cam;
 
-vec3s camPos = {0.0f, 0.0f, 3.0f};
-vec3s camFront = {0.0f, 0.0f, -1.0f};
-vec3s camUp = {0.0f, 1.0f, 0.0f};
+// vec3s camPos = {0.0f, 0.0f, 3.0f};
+// vec3s camFront = {0.0f, 0.0f, -1.0f};
+// vec3s camUp = {0.0f, 1.0f, 0.0f};
 
 bool first_mouse = true;
-float yaw   = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
-float pitch =  0.0f;
+// float yaw   = -90.0f;	// yaw is initialized to -90.0 degrees since a yaw of 0.0 results in a direction vector pointing to the right so we initially rotate a bit to the left.
+// float pitch =  0.0f;
 float lastx =  640.0f / 2.0;
 float lasty =  480.0 / 2.0;
-float fov   =  45.0f;
 
 float dt = 0.0f;
 float lastframe = 0.0f;
 
 int main(void) {
+    g.cam = camera_new();
     glfwSetErrorCallback(error_callback);
 
     if (!glfwInit())
@@ -128,11 +126,11 @@ int main(void) {
         GLint proj_loc = glGetUniformLocation(program, "projection");
 
         mat4s model = glms_mat4_identity();
-        mat4s project = glms_perspective(glm_rad(45.0f), ratio, 0.1f, 100.0f);
         model = glms_rotate(model, glfwGetTime(), (vec3s) {0.5f, 1.0f, 0.0f});
+        mat4s project = glms_perspective(glm_rad(45.0f), ratio, 0.1f, 100.0f);
 
-        vec3s center = glms_vec3_add(camPos, camFront);
-        mat4s view = glms_lookat(camPos, center, camUp);
+        // camera/view transformation
+        mat4s view = camera_view(g.cam);
 
         // pass them back to the shader
         glUniformMatrix4fv(view_loc, 1, GL_FALSE, (GLfloat *) view.raw);
@@ -171,15 +169,14 @@ void process_input(GLFWwindow *window)
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 
-    float cam_speed = (float)(2.5f * dt);
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camPos = glms_vec3_muladds(camFront, cam_speed, camPos);
+        g.cam->pos = glms_vec3_muladds(g.cam->dir, g.cam->movement_speed * dt, g.cam->pos);
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camPos = glms_vec3_mulsubs(camFront, cam_speed, camPos);
+        g.cam->pos = glms_vec3_mulsubs(g.cam->dir, g.cam->movement_speed * dt, g.cam->pos);
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camPos = glms_vec3_mulsubs(glms_normalize(glms_cross(camFront, camUp)), cam_speed, camPos);
+        g.cam->pos = glms_vec3_mulsubs(glms_normalize(glms_cross(g.cam->dir, g.cam->up)), g.cam->movement_speed * dt, g.cam->pos);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camPos = glms_vec3_muladds(glms_normalize(glms_cross(camFront, camUp)), cam_speed, camPos);
+        g.cam->pos = glms_vec3_muladds(glms_normalize(glms_cross(g.cam->dir, g.cam->up)), g.cam->movement_speed * dt, g.cam->pos);
 
     // locks player to xy plane
     // camPos.y = 0.0f;
@@ -205,20 +202,16 @@ void mouse_callback(GLFWwindow *window, double xposin, double yposin) {
     xoffset *= sensitivity;
     yoffset *= sensitivity;
 
-    yaw += xoffset;
-    pitch += yoffset;
+    g.cam->yaw += xoffset;
+    g.cam->pitch += yoffset;
 
     // make sure that when pitch is out of bounds, screen doesn't get flipped
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
+    if (g.cam->pitch > 89.0f)
+        g.cam->pitch = 89.0f;
+    if (g.cam->pitch < -89.0f)
+        g.cam->pitch = -89.0f;
 
-    vec3s front;
-    front.x = cos(glm_rad(yaw)) * cos(glm_rad(pitch));
-    front.y = sin(glm_rad(pitch));
-    front.z = sin(glm_rad(yaw)) * cos(glm_rad(pitch));
-    camFront = glms_normalize(front);
+    update_camera_vectors(g.cam);
 }
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)

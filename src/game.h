@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <cglm/struct.h>
+#include "camera.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void process_input(GLFWwindow *window);
@@ -8,26 +9,15 @@ static void key_callback(GLFWwindow *window, int key, int scancode, int action, 
 void mouse_callback(GLFWwindow *window, double xpos, double ypos);
 
 typedef struct game {
-    struct {
-        vec3s pos, dir, right, up;
-        float pitch, yaw;
-        float fov;
-        mat4s view, proj, view_proj;
-        mat4s view_no_pitch, view_proj_no_pitch;
-        mat4s int_view, inv_proj, in_view_proj;
-    } cam;
-
+    camera* cam;
     bool quit;
-
     bool force_mouse_free;
-
     bool allow_control_input;
-
     bool allow_editor_picking;
-
-    // add input struct
-
 } game;
+
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
 float vertices[] = {
     -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,

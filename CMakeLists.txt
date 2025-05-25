@@ -31,9 +31,12 @@ set (STARKGFX-SRC
         src/util/shader.h
         src/ext/stb_image.h
         src/ext/stb_image.c
+        src/entities/camera.h
+        src/entities/camera.c
+        src/util/input.h
 )
 
-include_directories(src/util)
+include_directories(src/util, src/entities)
 
 #=== EXECUTABLE: starkgfx
 add_executable(starkgfx WIN32 ${STARKGFX-SRC} ${GLAD_GL})
