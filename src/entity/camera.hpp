@@ -1,10 +1,7 @@
 ﻿#pragma once
-
-#include <bits/algorithmfwd.h>
 #include <gl.h>
 #include <glm/glm.hpp>
 #include <iostream>
-
 #include "glm/ext/matrix_transform.hpp"
 
 enum Camera_Movement { FORWARD, BACKWARD, LEFT, RIGHT };
@@ -33,7 +30,7 @@ public:
         world_up = up;
         yaw = -90.0f;
         pitch = 0.0f;
-        movement_speed = 1.0f;
+        movement_speed = 0.1f;
         mouse_sensitivity = 0.1f;
         fov = 60.0f;
         updateCameraVectors();
@@ -57,15 +54,6 @@ public:
         }
 
         std::cout << "Position: " << position.x << ", " << position.y << "\n";
-
-        // if (direction == FORWARD)
-        //     Position += Front * velocity;
-        // if (direction == BACKWARD)
-        //     Position -= Front * velocity;
-        // if (direction == LEFT)
-        //     Position -= Right * velocity;
-        // if (direction == RIGHT)
-        //     Position += Right * velocity;
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -84,14 +72,14 @@ public:
                 pitch = -89.0f;
         }
 
-        // update Front, Right and Up Vectors using the updated Euler angles
+        // update front, right and up Vectors using the updated Euler angles
         updateCameraVectors();
     }
 
 private:
     // calculates the front vector from the Camera's (updated) Euler Angles
     void updateCameraVectors() {
-        // calculate the new Front vector
+        // calculate the new front vector
         glm::vec3 newfront;
         newfront.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
         newfront.y = sin(glm::radians(pitch));

@@ -44,7 +44,12 @@ auto Game::init() -> int {
 
     // Create OpenGL context
     game.gl_context = SDL_GL_CreateContext(game.window);
-    // glEnable(GL_DEPTH_TEST);
+    if (game.gl_context == nullptr) {
+       std:: cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
+       SDL_Quit();
+       return -1;
+    }
+    glEnable(GL_DEPTH_TEST);
 
     // Check our OpenGL version
     int version = gladLoadGL((GLADloadfunc) SDL_GL_GetProcAddress);
