@@ -7,14 +7,14 @@
 #include "glm/ext/matrix_clip_space.hpp"
 #include "stb_image.h"
 
+auto game = Game();
+
 bool first_mouse = true;
 float lastx = 1280.f/2.f;
 float lasty = 720.f/2.f;
 
 float dt = 0.0f;
 float lastframe = 0.0f;
-
-auto game = Game();
 
 int main() {
     game.init();
@@ -35,7 +35,7 @@ auto Game::init() -> int {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
 
-    game.window = SDL_CreateWindow("StarkGFX", 1280, 720, SDL_WINDOW_OPENGL);
+    game.window = SDL_CreateWindow("StarkGFX", game.window_width, game.window_height, SDL_WINDOW_OPENGL);
     if (game.window == nullptr) {
         std::cerr << "SDL_CreateWindow Error: " << SDL_GetError() << std::endl;
         SDL_Quit();
@@ -112,11 +112,11 @@ auto Game::update() -> void {
         shader.use();
 
         // pass projection matrix to shader
-        glm::mat4 projection = glm::perspective(glm::radians(game.camera.Zoom), 1280.f / 720.f, 0.1f, 100.f);
+        glm::mat4 projection = glm::perspective(glm::radians(game.camera.fov), game.aspect_ratio, 0.1f, 100.f);
         shader.set_mat4("projection", projection);
 
         //camera/view transformation
-        glm::mat4 view = game.camera.GetViewMatrix();
+        glm::mat4 view = game.camera.get_view_mat();
         shader.set_mat4("view", view);
 
         // render boxes
@@ -158,16 +158,16 @@ auto Game::process_input(SDL_Event e) -> void {
         }
 
         if (e.key.scancode == SDL_SCANCODE_W) {
-            camera.ProcessKeyboard(FORWARD, dt);
-        }
-        if (e.key.scancode == SDL_SCANCODE_A) {
-            camera.ProcessKeyboard(LEFT, dt);
+            camera.ProcessKeyboard(glm::vec2(0.0f, 1.0f), dt);
         }
         if (e.key.scancode == SDL_SCANCODE_S) {
-            camera.ProcessKeyboard(BACKWARD, dt);
+            camera.ProcessKeyboard(glm::vec2(0.0f, -1.0f), dt);
+        }
+        if (e.key.scancode == SDL_SCANCODE_A) {
+            camera.ProcessKeyboard(glm::vec2(-1.0f, 0.0f), dt);
         }
         if (e.key.scancode == SDL_SCANCODE_D) {
-            camera.ProcessKeyboard(RIGHT, dt);
+            camera.ProcessKeyboard(glm::vec2(1.0f, 0.0f), dt);
         }
     }
 }

@@ -11,6 +11,9 @@ struct Game {
     auto process_input(SDL_Event e) -> void;
     auto destroy() const -> void;
 
+    float window_width = 1280.0f;
+    float window_height = 720.0f;
+    float aspect_ratio = window_width / window_height;
     SDL_Window* window{};
     SDL_GLContext gl_context{};
     bool quit = false;
