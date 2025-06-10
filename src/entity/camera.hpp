@@ -30,7 +30,7 @@ public:
         world_up = up;
         yaw = -90.0f;
         pitch = 0.0f;
-        movement_speed = 0.1f;
+        movement_speed = 0.01f;
         mouse_sensitivity = 0.1f;
         fov = 60.0f;
         updateCameraVectors();
@@ -42,8 +42,25 @@ public:
     // processes input received from any keyboard-like input system. Accepts input parameter in the form of camera
     // defined ENUM (to abstract it from windowing systems)
 
-    void ProcessKeyboard(glm::vec2 direction, float dt) {
+    void ProcessKeyboard(float dt) {
+        auto key = SDL_GetKeyboardState(NULL);
         float velocity = movement_speed * dt;
+        glm::vec2 direction{};
+
+        if (key[SDL_SCANCODE_W]) {
+           direction.y = 1.0f;
+        }
+        if (key[SDL_SCANCODE_S]) {
+            direction.y = -1.0f;
+        }
+        if (key[SDL_SCANCODE_A]) {
+            direction.x = -1.0f;
+        }
+        if (key[SDL_SCANCODE_D]) {
+            direction.x = 1.0f;
+        }
+
+        normalize(direction);
 
         if (direction.y != 0.0f) {
             position += direction.y * front * velocity;

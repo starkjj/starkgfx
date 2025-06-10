@@ -33,7 +33,7 @@ auto Game::init() -> int {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
     game.window = SDL_CreateWindow("StarkGFX", game.window_width, game.window_height, SDL_WINDOW_OPENGL);
     if (game.window == nullptr) {
@@ -42,20 +42,27 @@ auto Game::init() -> int {
         return -1;
     }
 
+    // glEnable(GL_DEPTH_TEST);
+
     // Create OpenGL context
     game.gl_context = SDL_GL_CreateContext(game.window);
+    SDL_GL_MakeCurrent(game.window, game.gl_context);
+    SDL_GL_SetSwapInterval(1); // enable vsync
     if (game.gl_context == nullptr) {
        std:: cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
        SDL_Quit();
        return -1;
     }
-    glEnable(GL_DEPTH_TEST);
+
+    // glEnable(GL_DEPTH_TEST);
 
     // Check our OpenGL version
     int version = gladLoadGL((GLADloadfunc) SDL_GL_GetProcAddress);
     printf("GL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
 
     SDL_SetWindowRelativeMouseMode(game.window, true);
+
+    glEnable(GL_DEPTH_TEST);
 
     return 0;
 }
@@ -143,6 +150,9 @@ auto Game::update() -> void {
 
 
 auto Game::process_input(SDL_Event e) -> void {
+    camera.ProcessKeyboard(dt);
+
+    // Event-based input
     while (SDL_PollEvent(&e)) {
         if (e.type == SDL_EVENT_QUIT)
             quit = true;
@@ -160,19 +170,6 @@ auto Game::process_input(SDL_Event e) -> void {
             lasty = e.motion.y;
 
             camera.ProcessMouseMovement(-xoffset, yoffset);
-        }
-
-        if (e.key.scancode == SDL_SCANCODE_W) {
-            camera.ProcessKeyboard(glm::vec2(0.0f, 1.0f), dt);
-        }
-        if (e.key.scancode == SDL_SCANCODE_S) {
-            camera.ProcessKeyboard(glm::vec2(0.0f, -1.0f), dt);
-        }
-        if (e.key.scancode == SDL_SCANCODE_A) {
-            camera.ProcessKeyboard(glm::vec2(-1.0f, 0.0f), dt);
-        }
-        if (e.key.scancode == SDL_SCANCODE_D) {
-            camera.ProcessKeyboard(glm::vec2(1.0f, 0.0f), dt);
         }
     }
 }
