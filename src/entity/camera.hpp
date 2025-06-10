@@ -69,8 +69,6 @@ public:
         if (direction.x != 0.0f) {
             position += direction.x * right * velocity;
         }
-
-        std::cout << "Position: " << position.x << ", " << position.y << "\n";
     }
 
     // processes input received from a mouse input system. Expects the offset value in both the x and y direction.

@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "glm/ext/matrix_clip_space.hpp"
+#include "primitive.hpp"
 #include "stb_image.h"
 
 auto game = Game();
@@ -105,6 +106,9 @@ auto Game::update() -> void {
     shader.use();
     shader.set_int("ourTexture", 0);
 
+    PrimitiveMesh mesh;
+    mesh.create_plane(1.0f, glm::vec3(1.0f));
+
     while (!game.quit) {
         float currentframe = SDL_GetTicks();
         dt = currentframe - lastframe;
@@ -130,6 +134,8 @@ auto Game::update() -> void {
         //camera/view transformation
         glm::mat4 view = game.camera.get_view_mat();
         shader.set_mat4("view", view);
+
+        // mesh.draw();
 
         // render boxes
         glBindVertexArray(VAO);

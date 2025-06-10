@@ -74,6 +74,7 @@ file(GLOB SRC_FILES
         src/*.cpp
         src/gfx/*.cpp
         src/ext/*.c
+        src/util/*.cpp
         libs/glad/src/*.c
 )
 
