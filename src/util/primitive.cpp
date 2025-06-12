@@ -1,5 +1,4 @@
 ﻿#include "primitive.hpp"
-
 #include "stb_image.h"
 
 PrimitiveMesh::~PrimitiveMesh() {
@@ -61,9 +60,15 @@ auto PrimitiveMesh::create_plane(float scale, glm::vec3 position) -> void {
     stbi_image_free(data);
 }
 
-auto PrimitiveMesh::draw() -> void {
+auto PrimitiveMesh::draw(glm::mat4 projection, glm::mat4 view) -> void {
     Shader shader("../../src/shaders/plane/pplane.vs", "../../src/shaders/plane/pplane.fs");
     shader.use();
+    shader.set_int("ourTexture", 0);
+    glm::mat4 model = glm::mat4(1.0f);
+    model = glm::scale(model, glm::vec3(5.f, 5.f, 5.f));
+    shader.set_mat4("model", model);
+    shader.set_mat4("projection", projection);
+    shader.set_mat4("view", view);
     glBindVertexArray(vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }

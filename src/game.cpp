@@ -3,7 +3,6 @@
 #include <SDL3/SDL_video.h>
 #include <gl.h>
 #include <iostream>
-
 #include "glm/ext/matrix_clip_space.hpp"
 #include "primitive.hpp"
 #include "stb_image.h"
@@ -61,7 +60,7 @@ auto Game::init() -> int {
     int version = gladLoadGL((GLADloadfunc) SDL_GL_GetProcAddress);
     printf("GL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
 
-    SDL_SetWindowRelativeMouseMode(game.window, true);
+    SDL_CaptureMouse(true);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -69,45 +68,38 @@ auto Game::init() -> int {
 }
 
 auto Game::update() -> void {
-    Shader shader("../../src/shaders/triangle/triangle.vs", "../../src/shaders/triangle/triangle.fs");
+    Shader cube_shader("../../src/shaders/cube/color_cube.vert", "../../src/shaders/cube/color_cube.frag");
+    Shader lamp_shader("../../src/shaders/cube/lamp_cube.vert", "../../src/shaders/cube/lamp_cube.frag");
 
-    unsigned int VBO, VAO;
-    glGenVertexArrays(1, &VAO);
+    glm::vec3 light_pos(1.2f, 1.0f, 2.0f);
+
+    // Setup VBO
+    unsigned int VBO, cubeVAO;
     glGenBuffers(1, &VBO);
+    glGenVertexArrays(1, &cubeVAO);
 
-    glBindVertexArray(VAO);
-
+    // bind vertex data to VBO
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(game.vertices), game.vertices, GL_STATIC_DRAW);
 
-    // position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    // Send our cube data to gpu
+    glBindVertexArray(cubeVAO);
+    // Send cube's position data to gpu
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    // texture coord attribute
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    // Send cube's normal data to gpu
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    GLuint texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    //configure the light_cube VAO (they have the same VBO b/c the vertices are the same)
+    unsigned int lampVAO;
+    glGenVertexArrays(1, &lampVAO);
+    glBindVertexArray(lampVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
-    // Create and load texture
-    int width, height, nrChannels;
-    stbi_set_flip_vertically_on_load(true);
-    unsigned char *data = stbi_load("../../assets/debugempty.png", &width, &height, &nrChannels, 0);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(data);
 
-    shader.use();
-    shader.set_int("ourTexture", 0);
-
-    PrimitiveMesh mesh;
-    mesh.create_plane(1.0f, glm::vec3(1.0f));
 
     while (!game.quit) {
         float currentframe = SDL_GetTicks();
@@ -118,37 +110,40 @@ auto Game::update() -> void {
         SDL_Event e;
         game.process_input(e);
 
-
         glClearColor(0.4, 0.75, 1.0, 1.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        // Setup lighting shader
+        cube_shader.use();
+        cube_shader.set_vec3("objectColor", 1.0f, 0.5f, 0.31f);
+        cube_shader.set_vec3("lightColor", 1.0f, 1.0f, 1.0f);
+        cube_shader.set_vec3("lightPos", light_pos);
+        cube_shader.set_vec3("viewPos", camera.position);
 
-        shader.use();
-
-        // pass projection matrix to shader
+        // Setup view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(game.camera.fov), game.aspect_ratio, 0.1f, 100.f);
-        shader.set_mat4("projection", projection);
-
-        //camera/view transformation
         glm::mat4 view = game.camera.get_view_mat();
-        shader.set_mat4("view", view);
+        cube_shader.set_mat4("projection", projection);
+        cube_shader.set_mat4("view", view);
 
-        // mesh.draw();
+        // world transformation
+        glm::mat4 model = glm::mat4(1.0f);
+        cube_shader.set_mat4("model", model);
 
-        // render boxes
-        glBindVertexArray(VAO);
-        for (unsigned int i = 0; i < 10; i++) {
-            // calculate the model matrix for each object and pass it to shader before drawing
-            glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-            model = glm::translate(model, game.cubePositions[i]);
-            float angle = 20.0f * i;
-            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-            shader.set_mat4("model", model);
+        // render cube
+        glBindVertexArray(cubeVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
-        }
+        // render the lamp
+        lamp_shader.use();
+        lamp_shader.set_mat4("projection", projection);
+        lamp_shader.set_mat4("view", view);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, light_pos);
+        model = glm::scale(model, glm::vec3(0.2f));
+        lamp_shader.set_mat4("model", model);
+        glBindVertexArray(lampVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
 
         SDL_GL_SwapWindow(game.window);
     }

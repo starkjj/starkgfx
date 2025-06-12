@@ -1,8 +1,7 @@
 ﻿#pragma once
 #include <gl.h>
 #include <glm/glm.hpp>
-#include <vector>
-
+#include <glm/ext/matrix_transform.hpp>
 #include "shader.hpp"
 
 struct Vertex {
@@ -20,7 +19,7 @@ public:
     PrimitiveMesh() = default;
     ~PrimitiveMesh();
 
-    auto draw() -> void;
+    auto draw(glm::mat4 projection, glm::mat4 view) -> void;
 
     auto create_plane(float scale, glm::vec3 position) -> void;
 
