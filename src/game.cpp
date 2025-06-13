@@ -6,6 +6,7 @@
 #include "glm/ext/matrix_clip_space.hpp"
 #include "primitive.hpp"
 #include "stb_image.h"
+#include "texture.hpp"
 
 auto game = Game();
 
@@ -81,21 +82,26 @@ auto Game::update() -> void {
     // Send our cube data to gpu
     glBindVertexArray(cubeVAO);
     // Send cube's position data to gpu
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     // Send cube's normal data to gpu
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+    // Send cube's uv data to gpu
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     //configure the light_cube VAO (they have the same VBO b/c the vertices are the same)
     unsigned int lampVAO;
     glGenVertexArrays(1, &lampVAO);
     glBindVertexArray(lampVAO);
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-
+    unsigned int diffuseMap = Texture::loadTexture("../../assets/default.png");
+    cube_shader.use();
+    cube_shader.set_int("material.diffuse", 0);
 
     while (!game.quit) {
         float currentframe = SDL_GetTicks();
@@ -131,6 +137,10 @@ auto Game::update() -> void {
         // world transformation
         glm::mat4 model = glm::mat4(1.0f);
         cube_shader.set_mat4("model", model);
+
+        // bind diffuse map
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseMap);
 
         // render cube
         glBindVertexArray(cubeVAO);
