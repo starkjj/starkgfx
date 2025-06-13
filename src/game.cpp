@@ -42,7 +42,7 @@ auto Game::init() -> int {
         return -1;
     }
 
-    // glEnable(GL_DEPTH_TEST);
+    SDL_SetWindowRelativeMouseMode(game.window, true);
 
     // Create OpenGL context
     game.gl_context = SDL_GL_CreateContext(game.window);
@@ -54,13 +54,9 @@ auto Game::init() -> int {
        return -1;
     }
 
-    // glEnable(GL_DEPTH_TEST);
-
     // Check our OpenGL version
     int version = gladLoadGL((GLADloadfunc) SDL_GL_GetProcAddress);
     printf("GL %d.%d\n", GLAD_VERSION_MAJOR(version), GLAD_VERSION_MINOR(version));
-
-    SDL_CaptureMouse(true);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -115,10 +111,16 @@ auto Game::update() -> void {
 
         // Setup lighting shader
         cube_shader.use();
-        cube_shader.set_vec3("objectColor", 1.0f, 0.5f, 0.31f);
-        cube_shader.set_vec3("lightColor", 1.0f, 1.0f, 1.0f);
-        cube_shader.set_vec3("lightPos", light_pos);
         cube_shader.set_vec3("viewPos", camera.position);
+        cube_shader.set_vec3("material.ambient", 1.0f, 0.5f, 0.31f);
+        cube_shader.set_vec3("material.diffuse", 1.0f, 0.5f, 0.31f);
+        cube_shader.set_vec3("material.specular", 0.5f, 0.5f, 0.5f);
+        cube_shader.set_float("material.roughness", 32.0f);
+
+        cube_shader.set_vec3("light.position", light_pos);
+        cube_shader.set_vec3("light.ambient", 0.2f, 0.2f, 0.2f);
+        cube_shader.set_vec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        cube_shader.set_vec3("light.specular", 1.0f, 1.0f, 1.0f);
 
         // Setup view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(game.camera.fov), game.aspect_ratio, 0.1f, 100.f);
@@ -164,13 +166,7 @@ auto Game::process_input(SDL_Event e) -> void {
         }
 
         if (e.type == SDL_EVENT_MOUSE_MOTION) {
-            float xoffset = lastx - e.motion.x;
-            float yoffset = lasty - e.motion.y;
-
-            lastx = e.motion.x;
-            lasty = e.motion.y;
-
-            camera.ProcessMouseMovement(-xoffset, yoffset);
+            camera.ProcessMouseMovement(e.motion.xrel, -e.motion.yrel);
         }
     }
 }
