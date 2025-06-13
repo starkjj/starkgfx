@@ -100,8 +100,11 @@ auto Game::update() -> void {
     glEnableVertexAttribArray(0);
 
     unsigned int diffuseMap = Texture::loadTexture("../../assets/default.png");
+    unsigned int specularMap = Texture::loadTexture("../../assets/default.png");
+
     cube_shader.use();
     cube_shader.set_int("material.diffuse", 0);
+    cube_shader.set_int("material.specular", 1);
 
     while (!game.quit) {
         float currentframe = SDL_GetTicks();
@@ -118,15 +121,56 @@ auto Game::update() -> void {
         // Setup lighting shader
         cube_shader.use();
         cube_shader.set_vec3("viewPos", camera.position);
-        cube_shader.set_vec3("material.ambient", 1.0f, 0.5f, 0.31f);
-        cube_shader.set_vec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-        cube_shader.set_vec3("material.specular", 0.5f, 0.5f, 0.5f);
-        cube_shader.set_float("material.roughness", 32.0f);
+        cube_shader.set_float("material.roughness", 64.0f);
 
-        cube_shader.set_vec3("light.position", light_pos);
-        cube_shader.set_vec3("light.ambient", 0.2f, 0.2f, 0.2f);
-        cube_shader.set_vec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-        cube_shader.set_vec3("light.specular", 1.0f, 1.0f, 1.0f);
+         // directional light
+        cube_shader.set_vec3("dirLight.direction", -0.2f, -1.0f, -0.3f);
+        cube_shader.set_vec3("dirLight.ambient", 0.05f, 0.05f, 0.05f);
+        cube_shader.set_vec3("dirLight.diffuse", 0.4f, 0.4f, 0.4f);
+        cube_shader.set_vec3("dirLight.specular", 0.5f, 0.5f, 0.5f);
+        // point light 1
+        cube_shader.set_vec3("pointLights[0].position", game.pointLightPositions[0]);
+        cube_shader.set_vec3("pointLights[0].ambient", 0.05f, 0.05f, 0.05f);
+        cube_shader.set_vec3("pointLights[0].diffuse", 0.8f, 0.8f, 0.8f);
+        cube_shader.set_vec3("pointLights[0].specular", 1.0f, 1.0f, 1.0f);
+        cube_shader.set_float("pointLights[0].constant", 1.0f);
+        cube_shader.set_float("pointLights[0].linear", 0.09f);
+        cube_shader.set_float("pointLights[0].quadratic", 0.032f);
+        // point light 2
+        cube_shader.set_vec3("pointLights[1].position", game.pointLightPositions[1]);
+        cube_shader.set_vec3("pointLights[1].ambient", 0.05f, 0.05f, 0.05f);
+        cube_shader.set_vec3("pointLights[1].diffuse", 0.8f, 0.8f, 0.8f);
+        cube_shader.set_vec3("pointLights[1].specular", 1.0f, 1.0f, 1.0f);
+        cube_shader.set_float("pointLights[1].constant", 1.0f);
+        cube_shader.set_float("pointLights[1].linear", 0.09f);
+        cube_shader.set_float("pointLights[1].quadratic", 0.032f);
+        // point light 3
+        cube_shader.set_vec3("pointLights[2].position", game.pointLightPositions[2]);
+        cube_shader.set_vec3("pointLights[2].ambient", 0.05f, 0.05f, 0.05f);
+        cube_shader.set_vec3("pointLights[2].diffuse", 0.8f, 0.8f, 0.8f);
+        cube_shader.set_vec3("pointLights[2].specular", 1.0f, 1.0f, 1.0f);
+        cube_shader.set_float("pointLights[2].constant", 1.0f);
+        cube_shader.set_float("pointLights[2].linear", 0.09f);
+        cube_shader.set_float("pointLights[2].quadratic", 0.032f);
+        // point light 4
+        cube_shader.set_vec3("pointLights[3].position", game.pointLightPositions[3]);
+        cube_shader.set_vec3("pointLights[3].ambient", 0.05f, 0.05f, 0.05f);
+        cube_shader.set_vec3("pointLights[3].diffuse", 0.8f, 0.8f, 0.8f);
+        cube_shader.set_vec3("pointLights[3].specular", 1.0f, 1.0f, 1.0f);
+        cube_shader.set_float("pointLights[3].constant", 1.0f);
+        cube_shader.set_float("pointLights[3].linear", 0.09f);
+        cube_shader.set_float("pointLights[3].quadratic", 0.032f);
+        // spotLight
+        cube_shader.set_vec3("spotLight.position", camera.position);
+        cube_shader.set_vec3("spotLight.direction", camera.front);
+        cube_shader.set_vec3("spotLight.ambient", 0.0f, 0.0f, 0.0f);
+        cube_shader.set_vec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+        cube_shader.set_vec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+        cube_shader.set_float("spotLight.constant", 1.0f);
+        cube_shader.set_float("spotLight.linear", 0.09f);
+        cube_shader.set_float("spotLight.quadratic", 0.032f);
+        cube_shader.set_float("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+        cube_shader.set_float("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));  
 
         // Setup view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(game.camera.fov), game.aspect_ratio, 0.1f, 100.f);
@@ -141,21 +185,39 @@ auto Game::update() -> void {
         // bind diffuse map
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
+        // bind specular map
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
 
         // render cube
+        // render containers
         glBindVertexArray(cubeVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (unsigned int i = 0; i < 10; i++)
+        {
+            // calculate the model matrix for each object and pass it to shader before drawing
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20.0f * i;
+            model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+            cube_shader.set_mat4("model", model);
+
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
 
         // render the lamp
         lamp_shader.use();
         lamp_shader.set_mat4("projection", projection);
         lamp_shader.set_mat4("view", view);
-        model = glm::mat4(1.0f);
-        model = glm::translate(model, light_pos);
-        model = glm::scale(model, glm::vec3(0.2f));
-        lamp_shader.set_mat4("model", model);
+
         glBindVertexArray(lampVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 36);
+        for (unsigned int i = 0; i < 4; i++) {
+            model = glm::mat4(1.0f);
+            model = glm::translate(model, game.pointLightPositions[i]);
+            model = glm::scale(model, glm::vec3(0.2f));
+            lamp_shader.set_mat4("model", model);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
 
         SDL_GL_SwapWindow(game.window);
     }

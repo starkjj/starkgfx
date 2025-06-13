@@ -18,6 +18,8 @@ public:
     float pitch;
     float yaw;
     // camera options
+    float walk_speed;
+    float sprint_speed;
     float movement_speed;
     float mouse_sensitivity;
     float fov;
@@ -30,7 +32,9 @@ public:
         world_up = up;
         yaw = -90.0f;
         pitch = 0.0f;
-        movement_speed = 0.01f;
+        walk_speed = 0.001f;
+        sprint_speed = 0.002f;
+        movement_speed = 0.001f;
         mouse_sensitivity = 0.1f;
         fov = 60.0f;
         updateCameraVectors();
@@ -59,6 +63,8 @@ public:
         if (key[SDL_SCANCODE_D]) {
             direction.x = 1.0f;
         }
+
+        movement_speed = key[SDL_SCANCODE_LSHIFT] ? sprint_speed : walk_speed;
 
         normalize(direction);
 
