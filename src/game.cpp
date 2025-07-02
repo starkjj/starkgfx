@@ -4,7 +4,6 @@
 #include <gl.h>
 #include <iostream>
 #include "glm/ext/matrix_clip_space.hpp"
-#include "primitive.hpp"
 #include "stb_image.h"
 #include "texture.hpp"
 
@@ -112,7 +111,7 @@ auto Game::update() -> void {
         lastframe = currentframe;
 
         // Input updates
-        SDL_Event e;
+        SDL_Event e{};
         game.process_input(e);
 
         glClearColor(0.4, 0.75, 1.0, 1.0);
